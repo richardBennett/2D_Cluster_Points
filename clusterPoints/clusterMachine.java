@@ -12,25 +12,37 @@ import java.util.Random;
 import java.util.Set;
 
 public class clusterMachine {
-    List<Double[]> points = new ArrayList<>(); 
-    public List<double[]> clusterPoints = new ArrayList<>();
+    private List<Double[]> points = new ArrayList<>(); 
+    private List<double[]> clusterPoints = new ArrayList<>();
     double[][] normalizations;
     double[][] distanceArray;
     private int maxClusters;
-    private int runs;
-    //private int increments;
     private boolean hasFile = false;
     private File input = null;
+    String fileName;
     private int rows;
     private int cols;
 
     public clusterMachine() {
-        maxClusters = 10;
-        runs = 10;
+        maxClusters = 100;
     }
     
-    public boolean accessFile(String fileName) {
-        System.out.println("Accessing File.");
+    public List<Double[]> getPoints() {
+        return points;
+    }
+    
+    public List<double[]> getClusterPoints() {
+        return clusterPoints;
+    }
+    
+    public void setMaxClusters(int number) throws IOException{
+        maxClusters = number;
+        if(input != null) run(fileName); 
+    }
+    
+    private boolean accessFile(String nameOfFile) {
+        //System.out.println("Accessing File.");
+        fileName = nameOfFile;
         boolean fileFound = false;
         input = new File(fileName);
         if (input.exists()) {
@@ -40,8 +52,8 @@ public class clusterMachine {
         return fileFound;
     }
     
-    public void acquireData() throws FileNotFoundException, IOException {
-        System.out.println("Acquiring Data.");
+    private void acquireData() throws FileNotFoundException, IOException {
+        //System.out.println("Acquiring Data.");
         BufferedReader inputSize = new BufferedReader(new FileReader(input));
         BufferedReader inputContents = new BufferedReader(new FileReader(input));
         String[] readLine;
@@ -66,7 +78,7 @@ public class clusterMachine {
     }
     
     private double[] calcMean() {
-        System.out.println("\tCalculating Means.");
+        //System.out.println("\tCalculating Means.");
         double[] mean = new double[cols];
         double[] sum = new double[cols];
         for(int i = 0; i < rows; i++) {
@@ -83,7 +95,7 @@ public class clusterMachine {
     }
     
     private double[] calcStdDev() {
-        System.out.println("\tCalculating Standard Deviations.");
+        //System.out.println("\tCalculating Standard Deviations.");
         double[] mean = calcMean();
         double[] variance = new double[cols];
         double[] stdDev = new double[cols];
@@ -103,8 +115,8 @@ public class clusterMachine {
         return stdDev;
     }
     
-    public double[][] calcNormals() {
-        System.out.println("Calculating Normals: ");
+    private double[][] calcNormals() {
+        //System.out.println("Calculating Normals: ");
         double[] mean = calcMean();
         double[] stdDev = calcStdDev();
         double[][] normalizations = new double[rows][cols];
@@ -120,8 +132,8 @@ public class clusterMachine {
         return normalizations;
     }
     
-    public void selectInitialClusters() {       
-        System.out.println("Selecting Initial Clusters");
+    private void selectInitialClusters() {       
+        //System.out.println("Selecting Initial Clusters");
         normalizations = calcNormals();
         Set<double[]> hashSet = new LinkedHashSet<>();
         List<double[]> uniquePoints = new ArrayList<>();
@@ -132,7 +144,11 @@ public class clusterMachine {
                 uniquePoints.add(normalizations[i]);
             }
         }
-        System.out.println("Number of unique points: " + uniquePoints.size());
+        //System.out.println("Number of unique points: " + uniquePoints.size());
+        if(uniquePoints.size() < maxClusters) {
+            System.out.println("Number of Clusters exceeds number of unique points");
+            maxClusters = 10;
+        }
         
         Random random = new Random();
         int counter = 0;
@@ -143,10 +159,10 @@ public class clusterMachine {
                 counter++;
             }
         }
-        System.out.println("The number of chosen Cluster Points: " + clusterPoints.size());
-        System.out.println("Initial Clusters: ");
+        //System.out.println("The number of chosen Cluster Points: " + clusterPoints.size());
+        //System.out.println("Initial Clusters: ");
         for(int i = 0; i < clusterPoints.size(); i++) {
-            System.out.println(clusterPoints.get(i)[0] + "," + clusterPoints.get(i)[1]); 
+            //System.out.println(clusterPoints.get(i)[0] + "," + clusterPoints.get(i)[1]); 
         }
     }
     
@@ -159,7 +175,7 @@ public class clusterMachine {
         return distance;
     }
     
-    public void getDistances() {
+    private void getDistances() {
         int clusterRows = clusterPoints.size();
         distanceArray = new double[rows][clusterRows];
 
@@ -192,7 +208,7 @@ public class clusterMachine {
         List<double[]> newClusterPoints = new ArrayList<>();
         int numClusters = clusterPoints.size();
         int[][] inCluster = determineCluster2();
-        int[] numPerCluster = new int[maxClusters];
+        int[] numPerCluster = new int[numClusters];
         
         
         for(int i = 0; i < numClusters; i++) {
@@ -220,5 +236,11 @@ public class clusterMachine {
         for(int i = 0; i < runs; i++) {
             refine();
         }
+    }
+    
+    public void run(String fileName) throws IOException {
+        accessFile(fileName);
+        acquireData();
+        selectInitialClusters();
     }
 }
